@@ -9,9 +9,6 @@ CREATE SEQUENCE IF NOT EXISTS messages_id_seq
     MAXVALUE 2147483647
     CACHE 1;
 
-ALTER SEQUENCE messages_id_seq
-    OWNER TO honcharenko;
-
 --ALTER SEQUENCE messages_id_seq OWNED BY messages.id;
 -- SEQUENCE: room_members_id_seq
 
@@ -24,9 +21,6 @@ CREATE SEQUENCE IF NOT EXISTS room_members_id_seq
     MAXVALUE 2147483647
     CACHE 1;
 
-ALTER SEQUENCE room_members_id_seq
-    OWNER TO honcharenko;
-
 -- SEQUENCE: users_id_seq
 
 -- DROP SEQUENCE IF EXISTS users_id_seq;
@@ -37,9 +31,6 @@ CREATE SEQUENCE IF NOT EXISTS users_id_seq
     MINVALUE 1
     MAXVALUE 2147483647
     CACHE 1;
-
-ALTER SEQUENCE users_id_seq
-    OWNER TO honcharenko;
 
 -- Table: rooms
 
@@ -57,8 +48,6 @@ CREATE TABLE IF NOT EXISTS rooms
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS rooms
-    OWNER TO honcharenko;
 
 -- Table: session
 
@@ -74,8 +63,6 @@ CREATE TABLE IF NOT EXISTS session
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS session
-    OWNER TO honcharenko;
 -- Index: IDX_session_expire
 
 -- DROP INDEX IF EXISTS "IDX_session_expire";
@@ -104,8 +91,6 @@ CREATE TABLE IF NOT EXISTS users
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS users
-    OWNER TO honcharenko;
 
 ALTER SEQUENCE users_id_seq OWNED BY users.id;
 -- Table: room_users
@@ -133,9 +118,6 @@ CREATE TABLE IF NOT EXISTS room_users
 )
 
 TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS room_users
-    OWNER TO honcharenko;
 
 
 ALTER SEQUENCE room_members_id_seq OWNED BY room_users.id;
@@ -171,8 +153,6 @@ CREATE TABLE IF NOT EXISTS messages
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS messages
-    OWNER TO honcharenko;
 
 ALTER SEQUENCE messages_id_seq OWNED BY messages.id;
 -- View: room_members
@@ -191,9 +171,6 @@ CREATE OR REPLACE VIEW room_members
      JOIN room_users rm ON ro.room_id = rm.room_id AND ro.member <> rm.member
      JOIN users o ON ro.member = o.id
      JOIN users mb ON rm.member = mb.id;
-
-ALTER TABLE room_members
-    OWNER TO honcharenko;
 
 -- View: contacts
 
@@ -214,6 +191,4 @@ CREATE OR REPLACE VIEW contacts
   WHERE rm.room_id IS NULL
   ORDER BY u1.id;
 
-ALTER TABLE contacts
-    OWNER TO honcharenko;
 

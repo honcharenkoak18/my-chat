@@ -1,9 +1,18 @@
-'use strict';
 require('dotenv').config();
 const db = require('../db/index');
 const Model = require('../db/Model');
 const bcrypt = require('bcrypt');
 const SALT = +process.env.SALT;
+const USER_COLUMNS_SET = [
+  'id',
+  'login',
+  'user_name',
+  'avatar',
+  'state',
+  'created_at',
+  'modified_at',
+];
+const DEFAULT_AVATAR = 'avatar-icon-116137-1938.png';
 class User extends Model {
   constructor(client) {
     super(client, 'public.users');
@@ -25,18 +34,15 @@ class User extends Model {
     }
   }
 
-  /** користувач за його логіном
+  /** користувач за параметрами (наприклад за логіном)
    * @param { {key: value} } params
    * @returns {Promise<{id : number, login: string, user_name: string,
-   * state: number, created_at:Date, modified_at:Date}>
-   * } користувач за його логіном
+   * avatar: string, state: number, created_at:Date, modified_at:Date}>
+   * }
    */
   async findUser(params) {
     try {
-      const user = await this.findOne(
-        ['id', 'login', 'user_name', 'state', 'created_at', 'modified_at'],
-        params
-      );
+      const user = await this.findOne(USER_COLUMNS_SET, params);
       return user;
     } catch (error) {
       if (!error.type) {
@@ -53,15 +59,15 @@ class User extends Model {
   /** користувач за його id
    * @param { number } userId
    * @returns {Promise<{id : number, login: string, user_name: string,
-   * state: number, created_at:Date, modified_at:Date}>
+   * avatar: string, state: number, created_at:Date, modified_at:Date}>
    * } користувач за його id або {}
    */
   async getUserById(userId) {
     try {
-      const user = await this.findOne(
-        ['id', 'login', 'user_name', 'state', 'created_at', 'modified_at'],
-        { id: userId, state: 0 }
-      );
+      const user = await this.findOne(USER_COLUMNS_SET, {
+        id: userId,
+        state: 0,
+      });
       return user;
     } catch (error) {
       if (!error.type) {
@@ -79,8 +85,7 @@ class User extends Model {
    * @param { number } userId - ідентифікатор користувача,
    *  для якого перевіряється пароль
    * @param { string } verifiedPassword - пароль для перевірки
-   * @returns { Promise<boolean> } проміс,
-   * який буде вирішений як результат порівняння * із збереженим в БД паролем
+   * @returns { Promise<boolean> }
    */
   async verifyPassword(userId, verifiedPassword) {
     try {
@@ -110,8 +115,8 @@ class User extends Model {
    * @param { string } login
    * @param { string } password
    * @param { string } username
-   * @returns { {id : number, login: string, user_name: string,
-   * state: number, created_at:Date, modified_at:Date} }
+   * @returns { Promise<{id : number, login: string, user_name: string,
+   * avatar: string, state: number, created_at:Date, modified_at:Date}> }
    */
   async newUser(login, password, username) {
     const minLength = 6;
@@ -119,34 +124,40 @@ class User extends Model {
       if (
         login.length < minLength ||
         password.length < minLength ||
-        username.length < minLength
+        username.length < 1
       ) {
         const error = new Error('');
         error.type = 'check params';
         if (login.length < minLength) {
-          error.message = `login повинен бути не менше ${minLength} символів.`;
+          error.message = `Пароль повинен бути не менше ${minLength} символів.`;
           throw error;
         }
         if (password.length < minLength) {
-          error.message = `password повинен бути не менше ${minLength}
+          error.message = `Пароль повинен бути не менше ${minLength}
           символів.`;
           throw error;
         }
-        if (username.length < minLength) {
-          error.message = `username повинен бути не менше ${minLength}
-          символів.`;
+        if (username.length < 1) {
+          // eslint-disable-next-line quotes
+          error.message = `Ім'я користувача повинно бути заповнене.`;
           throw error;
         }
       }
       const hashPassword = await bcrypt.hash(password, SALT);
-
-      const /**@type { {id : number, login: string, user_name: string,
-         * state: number, created_at:Date, modified_at:Date} } */ user =
-          await this.insert(
-            // eslint-disable-next-line camelcase
-            { login, password: hashPassword, user_name: username, state: 0 },
-            ['id', 'login', 'user_name', 'state', 'created_at', 'modified_at']
-          );
+      /**@type { {id : number, login: string, user_name: string,
+       * avatar: string, state: number, created_at:Date, modified_at:Date} } */
+      const user = await this.insert(
+        // eslint-disable-next-line camelcase
+        {
+          login,
+          password: hashPassword,
+          // eslint-disable-next-line camelcase
+          user_name: username,
+          state: 0,
+          avatar: DEFAULT_AVATAR,
+        },
+        USER_COLUMNS_SET
+      );
       return user;
     } catch (error) {
       if (!error.type) {
@@ -160,16 +171,15 @@ class User extends Model {
     }
   }
 
-  /**
-   * повертає перелік користувачів,
+  /** повертає перелік користувачів,
    * з якими у користувача userId відсутні чати(кімнати)
    * @param { number } userId
    * @returns { Promise<[{id : number, login: string, user_name: string,
-   * state: number, created_at:Date, modified_at:Date}]> }
+   * avatar: string, state: number, created_at:Date, modified_at:Date}]> }
    */
   async getContacts(userId) {
     try {
-      const sql = `select id, login, user_name, state, created_at, modified_at
+      const sql = `select  ${USER_COLUMNS_SET.join(',')}
         from public.contacts
         where "owner" = $1`;
       const { rows } = await this.query(sql, [userId]);
@@ -180,6 +190,49 @@ class User extends Model {
       }
       if (!error.source) {
         error.source = 'User getContacts';
+        console.log(error);
+      }
+      throw error;
+    }
+  }
+
+  /** Повертає кількість змінених рядків в таблиці public.users
+   * повинно бути 1
+   * @param { number} userId
+   * @param {{ key: value }} updateData
+   * @returns { Promise<number>}
+   */
+  async updateUser(userId, updateData) {
+    try {
+      await this.client.query('BEGIN');
+      const rowCount = await this.update(updateData, { id: userId });
+      const roomUserData = {};
+      if (updateData['avatar']) roomUserData['avatar'] = updateData['avatar'];
+      if (updateData['user_name']) {
+        roomUserData['room_name'] = updateData['user_name'];
+      }
+      if (Object.keys(roomUserData).length !== 0) {
+        const roomUserSet = Object.keys(roomUserData).map(
+          (c, i) => c + ' = $' + (i + 1)
+        );
+        const romUserValue = Object.values(roomUserData);
+        const sql = `update public.room_users set
+          modified_at = CURRENT_TIMESTAMP, ${roomUserSet.join()}
+          where id in (
+            select member_ru_id from  public.room_members
+            where owner = $${roomUserSet.length + 1}
+          )`;
+        await this.query(sql, [...romUserValue, userId]);
+      }
+      await this.client.query('COMMIT');
+      return rowCount;
+    } catch (error) {
+      await this.client.query('ROLLBACK');
+      if (!error.type) {
+        error.type = 'server error';
+      }
+      if (!error.source) {
+        error.source = 'User updateUser';
         console.log(error);
       }
       throw error;

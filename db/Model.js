@@ -1,4 +1,3 @@
-'use strict';
 const db = require('./index');
 
 /**
@@ -39,7 +38,6 @@ class Model {
         `SELECT ${columns.join()} FROM ${this.table}` +
         ` WHERE ${whereColumns.join(' AND ')}` +
         `${orders.length !== 0 ? 'ORDER BY ' + orders.join() : ''}`;
-      console.dir({ sql, params });
       const { rows } = await db.clientQuery(this.client, sql, whereValues);
       return rows;
     } catch (error) {
@@ -76,7 +74,7 @@ class Model {
     }
   }
 
-  /**
+  /** видаляє рядки з таблиці
    * @param { { key: value } } params параметри пошуку key = value
    * @returns { Promise< number > } Повертає кількість рядків, які були видалені
    */
@@ -102,11 +100,11 @@ class Model {
     }
   }
 
-  /**
+  /** повертає результат операції insert в БД
    * @param { { key: value } } columns - колонки таблиці та їх значення
    * @param { [ string ] } returning - перелік колонок,
    * які повертаються користувачу
-   * @returns { Promise<object> } повертає результат операції insert в БД
+   * @returns { Promise<object> }
    */
   async insert(columns, returning = []) {
     try {
@@ -132,6 +130,38 @@ class Model {
     }
   }
 
+  /** Повертає кількість рядків змінених в таблиці
+   * @param { { key: value } } columns
+   * @param { { key: value } } params
+   * @returns { Promise<number> }
+   */
+  async update(columns, params) {
+    try {
+      const columnsName = Object.keys(columns).map(
+        (c, i) => c + ' = $' + (i + 1)
+      );
+      const values = Object.values(columns);
+      const columnsCount = columnsName.length;
+      const whereColumns = Object.keys(params).map(
+        (c, i) => c + ' = $' + (i + columnsCount + 1)
+      );
+      const whereValues = Object.values(params);
+      const sql = `UPDATE ${this.table} SET ${columnsName.join()}
+        WHERE ${whereColumns.join(' AND ')}`;
+      const sqpParams = [...values, ...whereValues];
+      const { rowCount } = await db.clientQuery(this.client, sql, sqpParams);
+      return rowCount;
+    } catch (error) {
+      if (!error.type) {
+        error.type = 'server error';
+      }
+      if (!error.source) {
+        error.source = 'Model update';
+        console.log(error);
+      }
+      throw error;
+    }
+  }
   /**
    *
    * @param { string } sql текст запиту

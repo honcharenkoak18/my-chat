@@ -3,14 +3,22 @@
     <div class="navbar">
       <div>
         <my-button
+          id="active-switch"
           :icon-name="iconName"
           class="btn"
           @click.native="changeLeftActive"
         />
       </div>
-      <p class="user-info">Користувач: {{ userName }}</p>
+      <div class="user-info">
+        <img :src="'avatars/' + avatarName" alt="А" />
+        <p>{{ userName }}</p>
+      </div>
       <div>
-        <my-button icon-name="user" class="btn" @click.native="logout" />
+        <my-button
+          icon-name="sign-out-alt"
+          class="btn"
+          @click.native="logout"
+        />
       </div>
     </div>
     <div v-if="!socket">Ви не під'єднані до програми</div>
@@ -50,6 +58,10 @@ export default {
       const user = this.$store.state.user ? this.$store.state.user : {};
       return user.user_name ? user.user_name : '';
     },
+    avatarName() {
+      const user = this.$store.state.user ? this.$store.state.user : {};
+      return user.avatar ? user.avatar : '';
+    },
   },
   watch: {
     connectionError() {
@@ -59,6 +71,9 @@ export default {
     },
     room() {
       this.isActive = false;
+    },
+    avatarName() {
+      return 'avatar-icon-116137-1938.png';
     },
   },
   async mounted() {

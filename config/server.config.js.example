@@ -1,6 +1,0 @@
-const serverConfig = {
-  PORT: 5000,
-  PUBLIC: './client/dist',
-};
-
-module.exports = serverConfig;

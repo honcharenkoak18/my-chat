@@ -1,4 +1,3 @@
-'use strict';
 const UserService = require('../user/User.Service');
 
 /** записує в req.usr користувача, якщо в сесії знаходить збережений userId
@@ -35,7 +34,7 @@ async function authentication(req, res, next) {
 /** використовується для отримання інф. про користувача
  * @param { number } id ідентифікатор користувача
  * @returns { Promise<{id : number, login: string, user_name: string,
- * state: number, created_at:Date, modified_at:Date} | null> }
+ * avatar: string; state: number, created_at:Date, modified_at:Date} | null> }
  */
 async function deserializeUser(id) {
   console.log('deserializeUser');
@@ -158,6 +157,11 @@ async function authUserHandler(req, res) {
 async function logoutHandler(req, res) {
   // можливо треба прочитати сесію з запиту та для неї встановити кінець
   res.cookie('connect.sid', '', { expires: new Date() });
+  try {
+    if (req.session) await req.session.destroy();
+  } catch (error) {
+    console.log(error);
+  }
   res.json(true);
   return;
 }

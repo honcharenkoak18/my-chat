@@ -1,11 +1,11 @@
 export default {
   state: {
-    loading: false
+    loading: false,
   },
   mutations: {
     setLoading(state, loading) {
       state.loading = loading;
-    }
+    },
   },
   actions: {
     async request(
@@ -17,7 +17,7 @@ export default {
         if (
           body &&
           headers['Content-Type'] &&
-          headers['Content-Type'] == 'application/json'
+          headers['Content-Type'] === 'application/json'
         ) {
           body = JSON.stringify(body);
         }
@@ -25,7 +25,7 @@ export default {
           method,
           credentials: 'include', // include, *same-origin, omit
           body,
-          headers
+          headers,
         });
         //console.dir(response);
         let data = await response.text();
@@ -44,6 +44,6 @@ export default {
       } finally {
         commit('setLoading', false);
       }
-    }
-  }
+    },
+  },
 };
